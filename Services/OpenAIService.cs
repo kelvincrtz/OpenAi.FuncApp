@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace OpenAI.FuncApp.Services
 {
@@ -25,7 +25,7 @@ namespace OpenAI.FuncApp.Services
 
         public async Task<string> PostAsync(string endpoint, object payload)
         {
-            var content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
             var response = await _client.PostAsync(endpoint, content);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
