@@ -1,11 +1,11 @@
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using OpenAi.FuncApp.Configuration;
+using OpenAi.FuncApp.Constants;
 using OpenAi.FuncApp.Data.Requests;
 using OpenAi.FuncApp.Services.Interface;
 
@@ -25,7 +25,7 @@ namespace OpenAI.FuncApp.Services
         // Threads
         public async Task<string> GetThreadMessagesAsync(string threadId)
         {
-            return await GetAsync($"{_config.BaseUrl}/threads/{threadId}");
+            return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
         public async Task<string> StartNewThreadAsync(string initialMessage)
@@ -36,12 +36,12 @@ namespace OpenAI.FuncApp.Services
                 {
                 new
                 {
-                    role = "system",
+                    role = "user",
                     content = initialMessage
                 }
             }
             };
-            return await PostAsync($"{_config.BaseUrl}/threads", requestBody);
+            return await V2PostAsync($"{_config.BaseUrl}/threads", requestBody);
         }
 
         public async Task<string> ContinueThreadAsync(string threadId, string message)
@@ -57,7 +57,17 @@ namespace OpenAI.FuncApp.Services
                 }
             }
             };
-            return await PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
+            return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
+        }
+
+        public async Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId)
+        {
+            return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}", threadRequest);
+        }
+
+        public async Task<string> DeleteThreadAsync(string threadId)
+        {
+            return await V2DeleteAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
         // Vectors
@@ -68,7 +78,7 @@ namespace OpenAI.FuncApp.Services
                 query
             };
 
-            return await PostAsync($"{_config.BaseUrl}/vector-store/search", requestBody);
+            return await V1PostAsync($"{_config.BaseUrl}/vector-store/search", requestBody);
         }
 
         public async Task<string> InsertVectorAsync(string vectorData)
@@ -78,7 +88,7 @@ namespace OpenAI.FuncApp.Services
                 vectorData
             };
 
-            return await PostAsync($"{_config.BaseUrl}/vector-store/insert", requestBody);
+            return await V1PostAsync($"{_config.BaseUrl}/vector-store/insert", requestBody);
         }
 
         // Classifications
@@ -89,7 +99,7 @@ namespace OpenAI.FuncApp.Services
                 text
             };
 
-            return await PostAsync($"{_config.BaseUrl}/classifications", requestBody);
+            return await V1PostAsync($"{_config.BaseUrl}/classifications", requestBody);
         }
 
         // Completions
@@ -104,7 +114,7 @@ namespace OpenAI.FuncApp.Services
                 messages = request.Messages
             };
 
-            return await PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
+            return await V1PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
         }
 
         // Assistant
@@ -118,17 +128,17 @@ namespace OpenAI.FuncApp.Services
                 model = request.Model
             };
 
-            return await AssistantPostAsync($"{_config.BaseUrl}/assistants", requestBody);
+            return await V2PostAsync($"{_config.BaseUrl}/assistants", requestBody);
         }
 
         public async Task<string> ListAssistantsAsync()
         {
-            return await AssistantGetAsync($"{_config.BaseUrl}/assistants");
+            return await V2GetAsync($"{_config.BaseUrl}/assistants");
         }
 
         public async Task<string> RetrieveAssistantAsync(string assistantId)
         {
-            return await AssistantGetAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            return await V2GetAsync($"{_config.BaseUrl}/assistants/{assistantId}");
         }
 
         public async Task<string> ModifyAssistantAsync(AssistantRequest request, string assistantId)
@@ -140,15 +150,38 @@ namespace OpenAI.FuncApp.Services
                 model = request.Model
             };
 
-            return await AssistantPostAsync($"{_config.BaseUrl}/assistants/{assistantId}", requestBody);
+            return await V2PostAsync($"{_config.BaseUrl}/assistants/{assistantId}", requestBody);
         }
 
         public async Task<string> DeleteAssistantAsync(string assistantId)
         {
-            return await AssistantDeleteAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            return await V2DeleteAsync($"{_config.BaseUrl}/assistants/{assistantId}");
         }
 
-        private async Task<string> PostAsync(string url, object requestBody)
+        // Messages
+        public async Task<string> CreateMessageAsync(MessageRequest messageRequest, string threadId)
+        {
+            var requestBody = new
+            {
+                role = messageRequest.Role,
+                content = messageRequest.Content
+            };
+
+            return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
+        }
+
+        public async Task<string> ListMessagesAsync(string threadId)
+        {
+            return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages");
+        }
+
+        public async Task<string> RetrieveMessagesAsync(string threadId, string messageId)
+        {
+            return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
+        }
+
+        // Helpers
+        private async Task<string> V1PostAsync(string url, object requestBody)
         {
             try
             {
@@ -169,13 +202,12 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private async Task<string> GetAsync(string url)
+        private async Task<string> V1GetAsync(string url)
         {
             try
             {
-
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
                 var response = await _httpClient.GetAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 
@@ -188,8 +220,7 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        // Need a different PostAsync for the Assistant APIs
-        private async Task<string> AssistantPostAsync(string url, object requestBody)
+        private async Task<string> V2PostAsync(string url, object requestBody)
         {
             try
             {
@@ -197,8 +228,8 @@ namespace OpenAI.FuncApp.Services
                 var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", $"assistants=v2");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, $"assistants=v2");
                 var response = await _httpClient.PostAsync(url, content);
                 var responseString = await response.Content.ReadAsStringAsync();
 
@@ -211,13 +242,13 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private async Task<string> AssistantGetAsync(string url)
+        private async Task<string> V2GetAsync(string url)
         {
             try
             {
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", $"assistants=v2");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, $"assistants=v2");
                 var response = await _httpClient.GetAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 
@@ -230,13 +261,13 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private async Task<string> AssistantDeleteAsync(string url)
+        private async Task<string> V2DeleteAsync(string url)
         {
             try
             {
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add("OpenAI-Beta", $"assistants=v2");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, $"assistants=v2");
                 var response = await _httpClient.DeleteAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 

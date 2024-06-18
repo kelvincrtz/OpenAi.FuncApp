@@ -9,6 +9,13 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> GetThreadMessagesAsync(string threadId);
         Task<string> StartNewThreadAsync(string initialMessage);
         Task<string> ContinueThreadAsync(string threadId, string message);
+        Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId);
+        Task<string> DeleteThreadAsync(string threadId);
+
+        // Messages
+        Task<string> CreateMessageAsync(MessageRequest messageRequest, string threadId);
+        Task<string> ListMessagesAsync(string threadId);
+        Task<string> RetrieveMessagesAsync(string threadId, string messageId);
 
         // Classifications
         Task<string> ClassifyTextAsync(string text);
