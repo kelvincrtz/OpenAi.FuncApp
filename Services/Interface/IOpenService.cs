@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using OpenAi.FuncApp.Data.Requests;
 
 namespace OpenAi.FuncApp.Services.Interface
 {
@@ -17,9 +18,13 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> InsertVectorAsync(string vectorData);
 
         // Completions
-        Task<string> GenerateCompletionAsync(string model, string prompt, int? maxTokens = null, double? temperature = null, double? topP = null, int? n = null, string[] stop = null);
+        Task<string> GenerateCompletionAsync(CompletionRequest request);
 
         // Assistants
-        Task<string> AssistAsync(string conversationId, string message);
+        Task<string> CreateAssistantAsync(AssistantRequest request);
+        Task<string> ListAssistantsAsync();
+        Task<string> RetrieveAssistantAsync(string assistantId);
+        Task<string> ModifyAssistantAsync(AssistantRequest request, string assistantId);
+        Task<string> DeleteAssistantAsync(string assistantId);
     }
 }

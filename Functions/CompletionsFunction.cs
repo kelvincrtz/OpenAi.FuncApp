@@ -1,11 +1,13 @@
 using System;
-using System.Net.Http;
+using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OpenAi.FuncApp.Data.Requests;
 using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
@@ -21,28 +23,21 @@ namespace OpenAi.FuncApp.Functions
 
         [FunctionName("GenerateCompletion")]
         public async Task<IActionResult> Generate(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "completions")] HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "completions")]
+            HttpRequest req,
             ILogger log)
         {
-            string requestBody = await req.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<CompletionRequest>(requestBody);
 
-            string model = data?.model;
-            string prompt = data?.prompt;
-            int? maxTokens = data?.max_tokens;
-            double? temperature = data?.temperature;
-            double? topP = data?.top_p;
-            int? n = data?.n;
-            string[] stop = data?.stop?.ToObject<string[]>();
-
-            if (string.IsNullOrEmpty(model) || string.IsNullOrEmpty(prompt))
+            if (string.IsNullOrEmpty(request.Model))
             {
-                return new BadRequestObjectResult("Model and prompt are required.");
+                return new BadRequestObjectResult("Model is required.");
             }
 
             try
             {
-                string response = await _openAIService.GenerateCompletionAsync(model, prompt, maxTokens, temperature, topP, n, stop);
+                string response = await _openAIService.GenerateCompletionAsync(request);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
