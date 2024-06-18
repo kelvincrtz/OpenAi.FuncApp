@@ -1,11 +1,14 @@
 using System;
-using System.Net.Http;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OpenAi.FuncApp.Data.Requests;
 using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
@@ -21,13 +24,14 @@ namespace OpenAi.FuncApp.Functions
 
         [FunctionName("HandleThread")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/{action}/{threadId?}")] HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/{action}/{threadId?}")]
+            HttpRequest req,
             string action,
             string threadId,
             ILogger log)
         {
-            string requestBody = await req.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<CompletionRequest>(requestBody);
 
             try
             {
@@ -35,21 +39,20 @@ namespace OpenAi.FuncApp.Functions
                 switch (action.ToLower())
                 {
                     case "start":
-                        string initialMessage = data?.initialMessage;
-                        if (string.IsNullOrEmpty(initialMessage))
+                        if (request.Messages.Count == 0 || string.IsNullOrEmpty(request.Model))
                         {
-                            return new BadRequestObjectResult("Initial message is required.");
+                            return new BadRequestObjectResult("Initial message and model are required.");
                         }
-                        response = await _openAIService.StartNewThreadAsync(initialMessage);
+                        response = await _openAIService.StartNewThreadAsync(request);
                         break;
 
                     case "continue":
-                        string message = data?.message;
-                        if (string.IsNullOrEmpty(threadId) || string.IsNullOrEmpty(message))
+                        if (request.Messages.Count == 0 || string.IsNullOrEmpty(threadId))
                         {
-                            return new BadRequestObjectResult("Thread ID and message are required.");
+                            return new BadRequestObjectResult("Thread Id and message are required.");
                         }
-                        response = await _openAIService.ContinueThreadAsync(threadId, message);
+                        request.ThreadId = threadId;
+                        response = await _openAIService.ContinueThreadAsync(request, threadId);
                         break;
 
                     default:

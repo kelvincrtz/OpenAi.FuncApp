@@ -7,8 +7,8 @@ namespace OpenAi.FuncApp.Services.Interface
     {
         // Threads
         Task<string> GetThreadMessagesAsync(string threadId);
-        Task<string> StartNewThreadAsync(string initialMessage);
-        Task<string> ContinueThreadAsync(string threadId, string message);
+        Task<string> StartNewThreadAsync(CompletionRequest request);
+        Task<string> ContinueThreadAsync(CompletionRequest request, string threadId);
         Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId);
         Task<string> DeleteThreadAsync(string threadId);
 
@@ -16,6 +16,8 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> CreateMessageAsync(MessageRequest messageRequest, string threadId);
         Task<string> ListMessagesAsync(string threadId);
         Task<string> RetrieveMessagesAsync(string threadId, string messageId);
+        Task<string> ModifyMessagesAsync(MessageRequest messageRequest, string threadId, string messageId);
+        Task<string> DeleteMessagesAsync(string threadId, string messageId);
 
         // Classifications
         Task<string> ClassifyTextAsync(string text);

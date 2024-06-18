@@ -19,6 +19,9 @@ namespace OpenAi.FuncApp.Data.Requests
 
         [JsonProperty("messages", NullValueHandling = NullValueHandling.Ignore)]
         public List<Message> Messages { get; set; }
+
+        [JsonProperty("threadId", NullValueHandling = NullValueHandling.Ignore)]
+        public string ThreadId { get; set; }
     }
 
     public class Message

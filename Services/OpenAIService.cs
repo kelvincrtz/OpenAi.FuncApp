@@ -28,36 +28,31 @@ namespace OpenAI.FuncApp.Services
             return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
-        public async Task<string> StartNewThreadAsync(string initialMessage)
+        public async Task<string> StartNewThreadAsync(CompletionRequest request)
         {
             var requestBody = new
             {
-                messages = new[]
-                {
-                new
-                {
-                    role = "user",
-                    content = initialMessage
-                }
-            }
+                model = request.Model,
+                max_tokens = request.MaxTokens,
+                temperature = request.Temperature,
+                messages = request.Messages
             };
-            return await V2PostAsync($"{_config.BaseUrl}/threads", requestBody);
+
+            return await V2PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
         }
 
-        public async Task<string> ContinueThreadAsync(string threadId, string message)
+        public async Task<string> ContinueThreadAsync(CompletionRequest request, string threadId)
         {
             var requestBody = new
             {
-                messages = new[]
-                {
-                new
-                {
-                    role = "user",
-                    content = message
-                }
-            }
+                model = request.Model,
+                max_tokens = request.MaxTokens,
+                temperature = request.Temperature,
+                thread_id = threadId,
+                messages = request.Messages
             };
-            return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
+
+            return await V2PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
         }
 
         public async Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId)
@@ -178,6 +173,16 @@ namespace OpenAI.FuncApp.Services
         public async Task<string> RetrieveMessagesAsync(string threadId, string messageId)
         {
             return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
+        }
+
+        public async Task<string> ModifyMessagesAsync(MessageRequest messageRequest, string threadId, string messageId)
+        {
+            return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}", messageRequest);
+        }
+
+        public async Task<string> DeleteMessagesAsync(string threadId, string messageId)
+        {
+            return await V2DeleteAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
         }
 
         // Helpers
