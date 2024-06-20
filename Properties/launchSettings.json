@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "OpenAi.Kelvin": {
+    "OpenAi.FuncApp": {
       "commandName": "Project",
       "commandLineArgs": "--port 7130",
       "launchBrowser": false

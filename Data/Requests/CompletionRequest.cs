@@ -18,13 +18,13 @@ namespace OpenAi.FuncApp.Data.Requests
         public double? Temperature { get; set; }
 
         [JsonProperty("messages", NullValueHandling = NullValueHandling.Ignore)]
-        public List<Message> Messages { get; set; }
+        public List<MessageCompletion> Messages { get; set; }
 
         [JsonProperty("threadId", NullValueHandling = NullValueHandling.Ignore)]
         public string ThreadId { get; set; }
     }
 
-    public class Message
+    public class MessageCompletion
     {
         [JsonProperty("role", NullValueHandling = NullValueHandling.Ignore)]
         public string Role { get; set; }

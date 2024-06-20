@@ -22,48 +22,66 @@ namespace OpenAi.FuncApp.Functions
             _openAIService = openAIService;
         }
 
-        [FunctionName("HandleThread")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/{action}/{threadId?}")]
+        [FunctionName("StartNewThread")]
+        public async Task<IActionResult> StartNewThread(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/start")]
             HttpRequest req,
-            string action,
-            string threadId,
             ILogger log)
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var request = JsonConvert.DeserializeObject<CompletionRequest>(requestBody);
+            var request = JsonConvert.DeserializeObject<MessageRequest>(requestBody);
 
             try
             {
-                string response;
-                switch (action.ToLower())
-                {
-                    case "start":
-                        if (request.Messages.Count == 0 || string.IsNullOrEmpty(request.Model))
-                        {
-                            return new BadRequestObjectResult("Initial message and model are required.");
-                        }
-                        response = await _openAIService.StartNewThreadAsync(request);
-                        break;
-
-                    case "continue":
-                        if (request.Messages.Count == 0 || string.IsNullOrEmpty(threadId))
-                        {
-                            return new BadRequestObjectResult("Thread Id and message are required.");
-                        }
-                        request.ThreadId = threadId;
-                        response = await _openAIService.ContinueThreadAsync(request, threadId);
-                        break;
-
-                    default:
-                        return new BadRequestObjectResult("Invalid action.");
-                }
-
+                var response = await _openAIService.StartNewThreadAsync(request);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, $"Error handling thread action '{action}' for thread '{threadId}'.");
+                log.LogError(ex, "Error assisting.");
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [FunctionName("CreateThreadAsync")]
+        public async Task<IActionResult> CreateThreadAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "create/thread")]
+            HttpRequest req,
+            ILogger log)
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<ThreadRequest>(requestBody);
+
+            try
+            {
+                var response = await _openAIService.CreateThreadAsync(request);
+                return new OkObjectResult(response);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error assisting.");
+                return new StatusCodeResult(500);
+            }
+        }
+
+        [FunctionName("CreateRun")]
+        public async Task<IActionResult> CreateRun(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "create/thread/run/{threadId}")]
+            HttpRequest req,
+            string threadId,
+            ILogger log)
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<RunRequest>(requestBody);
+
+            try
+            {
+                var response = await _openAIService.CreateRun(request, threadId);
+                return new OkObjectResult(response);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error assisting.");
                 return new StatusCodeResult(500);
             }
         }

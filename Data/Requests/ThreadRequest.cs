@@ -16,4 +16,13 @@ namespace OpenAi.FuncApp.Data.Requests
         [JsonProperty("user", NullValueHandling = NullValueHandling.Ignore)]
         public string User { get; set; }
     }
+
+    public class Message
+    {
+        [JsonProperty("role", NullValueHandling = NullValueHandling.Ignore)]
+        public string Role { get; set; }
+
+        [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
+        public string Content { get; set; }
+    }
 }

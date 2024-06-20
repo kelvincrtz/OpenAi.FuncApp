@@ -21,9 +21,9 @@ namespace OpenAi.FuncApp.Services
             _openAIService = openAIService;
         }
 
-        [FunctionName("CreateMessage")]
-        public async Task<IActionResult> CreateMessage(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/{threadId}")]
+        [FunctionName("AddMessage")]
+        public async Task<IActionResult> AddMessage(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "messages/add/{threadId}")]
             HttpRequest req,
             string threadId,
             ILogger log)
@@ -31,19 +31,14 @@ namespace OpenAi.FuncApp.Services
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var request = JsonConvert.DeserializeObject<MessageRequest>(requestBody);
 
-            if (string.IsNullOrEmpty(request.Role) || string.IsNullOrEmpty(request.Content))
-            {
-                return new BadRequestObjectResult("Role and Content are required.");
-            }
-
             try
             {
-                string response = await _openAIService.CreateMessageAsync(request, threadId);
+                string response = await _openAIService.AddMessageAsync(request, threadId);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error messaging.");
+                log.LogError(ex, "Error getting the list of messages.");
                 return new StatusCodeResult(500);
             }
         }
