@@ -361,40 +361,84 @@ namespace OpenAI.FuncApp.Services
             var responseDto = new object();
 
             using (var responseStream = await response.Content.ReadAsStreamAsync())
-            using (var reader = new System.IO.StreamReader(responseStream))
+            using (var reader = new StreamReader(responseStream))
             {
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
 
+                    // v2
+                    if (line != null && line.StartsWith("event: thread.message.delta"))
+                    {
+                        var dataLine = await reader.ReadLineAsync();
+                        if (dataLine != null && dataLine.StartsWith("data: "))
+                        {
+                            var jsonData = dataLine.Substring(6); // Remove "data: " prefix
+                            var data = JsonConvert.DeserializeObject<Data>(jsonData);
+                            HandleEvent(data);
+                        }
+                    }
+
                     // Log each line to see what we are getting
-                    Console.WriteLine($"{line}");
+                    // Console.WriteLine($"{line}");
+                    
 
+                    // v1
                     // Process only lines starting with "data:"
-                    if (line.StartsWith("data:"))
-                    {
-                        var jsonData = line.Substring("data:".Length).Trim();
+                    //if (line.StartsWith("data:"))
+                    //{
+                    //    var jsonData = line.Substring("data:".Length).Trim();
 
-                        try
-                        {
-                            // Process the JSON data chunk and act on it
-                            responseDto = JsonConvert.DeserializeObject<object>(jsonData);
+                    //    try
+                    //    {
+                    //        // Process the JSON data chunk and act on it
+                    //        responseDto = JsonConvert.DeserializeObject<object>(jsonData);
 
-                        }
-                        catch (Newtonsoft.Json.JsonException jsonEx)
-                        {
-                            Console.WriteLine($"JSON Deserialization Error: {jsonEx.Message}");
-                            Console.WriteLine($"Line Content: {jsonData}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Skipping non-data line.");
-                    }
+                    //    }
+                    //    catch (Newtonsoft.Json.JsonException jsonEx)
+                    //    {
+                    //        Console.WriteLine($"JSON Deserialization Error: {jsonEx.Message}");
+                    //        Console.WriteLine($"Line Content: {jsonData}");
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    Console.WriteLine("Skipping non-data line.");
+                    //}
                 }
             }
 
             return responseDto;
+        }
+
+        private static void HandleEvent(Data data)
+        {
+            //if (threadEvent == null)
+            //{
+            //    Console.WriteLine("ThreadEvent is null.");
+            //    return;
+            //}
+
+            //// Handle the event based on its type and data
+            //Console.WriteLine($"Event: {threadEvent.Event}");
+            if (data?.Delta?.Content != null)
+            {
+                foreach (var content in data.Delta.Content)
+                {
+                    if (content?.Text != null)
+                    {
+                        Console.WriteLine($"Content: {content.Text.Value}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Content.Text is null.");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Data.Delta.Content is null.");
+            }
         }
     }
 }
