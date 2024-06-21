@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -208,7 +208,7 @@ namespace OpenAI.FuncApp.Services
         }
 
         // Runs
-        public async Task<object> CreateRun(RunRequest runRequest, string threadId)
+        public async Task<List<ThreadEvent>> CreateRun(RunRequest runRequest, string threadId)
         {
             // TODO: maybe do not need to do another mapping here if json works okay with runRequest
             var requestBody = new
@@ -284,11 +284,11 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private async Task<object> V2PostStreamAsync(string url, object requestBody)
+        private async Task<List<ThreadEvent>> V2PostStreamAsync(string url, object requestBody)
         {
             try
             {
-                var responseDto = new object();
+                var responseDto = new List<ThreadEvent>();
                 var jsonString = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
@@ -356,9 +356,9 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private static async Task<object> ProcessStreamingResponse(HttpResponseMessage response)
+        private static async Task<List<ThreadEvent>> ProcessStreamingResponse(HttpResponseMessage response)
         {
-            var responseDto = new object();
+            var responseDto = new List<ThreadEvent>();
 
             using (var responseStream = await response.Content.ReadAsStreamAsync())
             using (var reader = new StreamReader(responseStream))
@@ -388,7 +388,7 @@ namespace OpenAI.FuncApp.Services
                                 threadEvent.DataCompleted = JsonConvert.DeserializeObject<DataCompleted>(jsonData);
                             }
 
-                            HandleEvent(threadEvent);
+                            responseDto.Add(HandleEvent(threadEvent));
                         }
                     }
                 }
@@ -397,59 +397,109 @@ namespace OpenAI.FuncApp.Services
             return responseDto;
         }
 
-        private static void HandleEvent(ThreadEvent threadEvent)
+        private static ThreadEvent HandleEvent(ThreadEvent threadEvent)
         {
             if (threadEvent == null)
             {
                 Console.WriteLine("ThreadEvent is null.");
-                return;
+                return null;
             }
+            var response = new ThreadEvent();
 
             Console.WriteLine($"Event: {threadEvent.Event}");
 
-            if (threadEvent.Event == "thread.message.delta")
+            switch (threadEvent.Event)
             {
-                if (threadEvent.DataDelta?.Delta?.Content != null)
-                {
-                    foreach (var content in threadEvent.DataDelta.Delta.Content)
-                    {
-                        if (content?.Text != null)
-                        {
-                            Console.WriteLine($"Delta Content: {content.Text.Value}");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Delta Content is null.");
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("DataDelta.Delta.Content is null.");
-                }
+                case "thread.message.delta":
+                    HandleDeltaEvent(threadEvent.DataDelta);
+                    break;
+                case "thread.message.completed":
+                    HandleCompletedEvent(threadEvent.DataCompleted);
+                    break;
+                default:
+                    Console.WriteLine("Unknown event type.");
+                    break;
             }
-            else if (threadEvent.Event == "thread.message.completed")
-            {
-                if (threadEvent.DataCompleted?.Content != null)
-                {
-                    foreach (var content in threadEvent.DataCompleted.Content)
-                    {
-                        if (content?.Text != null)
-                        {
-                            Console.WriteLine($"Completed Content: {content.Text.Value}");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Completed Content is null.");
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("DataCompleted.Content is null.");
-                }
-            }
-            Console.WriteLine("=========================================");
+
+            return threadEvent;
         }
+
+        private static void HandleDeltaEvent(DataDelta dataDelta)
+        {
+            if (dataDelta?.Delta?.Content == null)
+            {
+                Console.WriteLine("DataDelta.Delta.Content is null.");
+                return;
+            }
+
+            foreach (var content in dataDelta.Delta.Content)
+            {
+                LogContent(content);
+            }
+        }
+
+        private static void HandleCompletedEvent(DataCompleted dataCompleted)
+        {
+            if (dataCompleted == null)
+            {
+                Console.WriteLine("DataCompleted is null.");
+                return;
+            }
+
+            // LogCompletedDetails(dataCompleted);
+            LogCompletedContent(dataCompleted.Content);
+        }
+
+        private static void LogContent(Content content)
+        {
+            if (content?.Text != null)
+            {
+                Console.WriteLine($"Delta Content: {content.Text.Value}");
+            }
+            else
+            {
+                Console.WriteLine("Delta Content is null.");
+            }
+        }
+
+        private static void LogCompletedContent(List<CompletedContent> contentList)
+        {
+            Console.WriteLine("Content:");
+
+            if (contentList == null)
+            {
+                Console.WriteLine("Completed Content is null.");
+                return;
+            }
+
+            foreach (var content in contentList)
+            {
+                if (content?.Text != null)
+                {
+                    Console.WriteLine($"Completed Content: {content.Text.Value}");
+                }
+                else
+                {
+                    Console.WriteLine("Completed Content is null.");
+                }
+            }
+        }
+
+        private static void LogCompletedDetails(DataCompleted dataCompleted)
+        {
+            // not used for now - for testing purposes only
+            Console.WriteLine($"ID: {dataCompleted.Id}");
+            Console.WriteLine($"Object: {dataCompleted.Object}");
+            Console.WriteLine($"Created At: {dataCompleted.CreatedAt}");
+            Console.WriteLine($"Assistant ID: {dataCompleted.AssistantId}");
+            Console.WriteLine($"Thread ID: {dataCompleted.ThreadId}");
+            Console.WriteLine($"Run ID: {dataCompleted.RunId}");
+            Console.WriteLine($"Status: {dataCompleted.Status}");
+            Console.WriteLine($"Incomplete Details: {dataCompleted.IncompleteDetails}");
+            Console.WriteLine($"Incomplete At: {dataCompleted.IncompleteAt}");
+            Console.WriteLine($"Completed At: {dataCompleted.CompletedAt}");
+            Console.WriteLine($"Role: {dataCompleted.Role}");
+        }
+
     }
 }
