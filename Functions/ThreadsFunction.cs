@@ -12,23 +12,39 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "Threads")]
     public class ThreadsFunction
     {
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// We use Open AI service
+        /// </summary>
+        /// <param name="openAIService"></param>
         public ThreadsFunction(IOpenAIService openAIService)
         {
             _openAIService = openAIService;
         }
 
-        [FunctionName("StartNewThread")]
-        public async Task<IActionResult> StartNewThread(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/start")]
+        /// <summary>
+        /// Create a new thread
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("StartNewThreadAsync")]
+        public async Task<IActionResult> StartNewThreadAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads")]
             HttpRequest req,
             ILogger log)
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var request = JsonConvert.DeserializeObject<MessageRequest>(requestBody);
+
+            if (string.IsNullOrEmpty(request.Content) || string.IsNullOrEmpty(request.Assistant_Id))
+            {
+                return new BadRequestObjectResult("Content and AssistantId are required.");
+            }
 
             try
             {
@@ -42,27 +58,45 @@ namespace OpenAi.FuncApp.Functions
             }
         }
 
-        [FunctionName("CreateThreadAsync")]
-        public async Task<IActionResult> CreateThreadAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "create/thread")]
+        /// <summary>
+        /// Continue an existing thread
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("ContinueThreadAsync")]
+        public async Task<IActionResult> ContinueThreadAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/{threadId}")]
             HttpRequest req,
+            string threadId,
             ILogger log)
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var request = JsonConvert.DeserializeObject<ThreadRequest>(requestBody);
+            var request = JsonConvert.DeserializeObject<MessageRequest>(requestBody);
+
+            if (string.IsNullOrEmpty(request.Content) || string.IsNullOrEmpty(request.Assistant_Id))
+            {
+                return new BadRequestObjectResult("Content and AssistantId are required.");
+            }
 
             try
             {
-                var response = await _openAIService.CreateThreadAsync(request);
+                var response = await _openAIService.ContinueThreadAsync(request, threadId);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error creating the thread.");
+                log.LogError(ex, "Error continuing an exisiting thread.");
                 return new StatusCodeResult(500);
             }
         }
 
+        /// <summary>
+        /// Endpoints is expose only for testing purposes
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
         [FunctionName("CreateRun")]
         public async Task<IActionResult> CreateRun(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "create/thread/run/{threadId}")]

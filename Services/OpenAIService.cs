@@ -25,40 +25,32 @@ namespace OpenAI.FuncApp.Services
             _config = config.Value;
         }
 
-        // Main
-        public async Task<string> StartNewThreadAsync(MessageRequest request)
+        public async Task<List<ThreadEventResponse>> StartNewThreadAsync(MessageRequest messageRequest)
         {
-            // 1. Create Thread
-            var newThread = await CreateThreadAsync(new ThreadRequest());
+            // 1. Create a new thread
+            var newThread = await CreateNewThreadAsync();
 
-            // 2. Add Message
-            await AddMessageAsync(new MessageRequest
+            // 2. Add message
+            await AddMessageAsync(messageRequest, newThread.Id);
+
+            // 3. Run thread
+            return await CreateRun(new RunRequest
             {
-                Role = request.Role,
-                Content = request.Content
+                Assistant_Id = messageRequest.Assistant_Id
             }, newThread.Id);
-
-            // 3. Run Thread
-            // return await CreateRun(new RunRequest
-            // {
-            //     Assistant_Id = request.Assistant_Id
-            // }, newThread.Id);
-
-            return null;
         }
 
-        public async Task<string> ContinueThreadAsync(CompletionRequest request, string threadId)
+        public async Task<List<ThreadEventResponse>> ContinueThreadAsync(MessageRequest messageRequest, string threadId)
         {
-            var requestBody = new
-            {
-                model = request.Model,
-                max_tokens = request.MaxTokens,
-                temperature = request.Temperature,
-                thread_id = threadId,
-                messages = request.Messages
-            };
 
-            return await V2PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
+            // 1. Add message to an existing thread
+            await AddMessageAsync(messageRequest, threadId);
+
+            // 2. Run thread
+            return await CreateRun(new RunRequest
+            {
+                Assistant_Id = messageRequest.Assistant_Id
+            }, threadId);
         }
 
         // Threads
@@ -67,13 +59,10 @@ namespace OpenAI.FuncApp.Services
             return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
-        public async Task<ThreadResponse> CreateThreadAsync(ThreadRequest threadRequest)
+        public async Task<ThreadResponse> CreateNewThreadAsync()
         {
-            // TODO threadRequest
-            // for now no request
             var jsonResponse = await V2PostAsync($"{_config.BaseUrl}/threads", null);
-            var threadDto = JsonConvert.DeserializeObject<ThreadResponse>(jsonResponse);
-            return threadDto;
+            return JsonConvert.DeserializeObject<ThreadResponse>(jsonResponse);
         }
 
         public async Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId)
@@ -180,7 +169,7 @@ namespace OpenAI.FuncApp.Services
             var requestBody = new
             {
                 role = messageRequest.Role,
-                content = messageRequest.Content
+                content = messageRequest.Content // TODO: for the time being we only use a Text type for Content. We might need more options later
             };
 
             return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
@@ -366,15 +355,12 @@ namespace OpenAI.FuncApp.Services
                 {
                     var line = await reader.ReadLineAsync();
 
-                    // v2
                     if (line != null && (line.StartsWith("event: thread.message.delta") || line.StartsWith("event: thread.message.completed")))
                     {
                         var eventType = line.Substring(7); // Remove "event: " prefix
                         var dataLine = await reader.ReadLineAsync();
                         if (dataLine != null && dataLine.StartsWith("data: "))
                         {
-
-                            //v2
                             var jsonData = dataLine.Substring(6); // Remove "data: " prefix
                             var threadEventResponse = new ThreadEventResponse { Event = eventType };
 
@@ -483,9 +469,9 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
+        // not used for now - for testing purposes only
         private static void LogCompletedDetails(DataCompleted dataCompleted)
         {
-            // not used for now - for testing purposes only
             Console.WriteLine($"ID: {dataCompleted.Id}");
             Console.WriteLine($"Object: {dataCompleted.Object}");
             Console.WriteLine($"Created At: {dataCompleted.CreatedAt}");
@@ -498,6 +484,5 @@ namespace OpenAI.FuncApp.Services
             Console.WriteLine($"Completed At: {dataCompleted.CompletedAt}");
             Console.WriteLine($"Role: {dataCompleted.Role}");
         }
-
     }
 }

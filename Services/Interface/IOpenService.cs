@@ -8,12 +8,12 @@ namespace OpenAi.FuncApp.Services.Interface
     public interface IOpenAIService
     {
         // Main
-        Task<string> StartNewThreadAsync(MessageRequest request);
-        Task<string> ContinueThreadAsync(CompletionRequest request, string threadId);
+        Task<List<ThreadEventResponse>> StartNewThreadAsync(MessageRequest messageRequest);
+        Task<List<ThreadEventResponse>> ContinueThreadAsync(MessageRequest messageRequest, string threadId);
 
         // Threads
+        Task<ThreadResponse> CreateNewThreadAsync();
         Task<string> GetThreadMessagesAsync(string threadId);
-        Task<ThreadResponse> CreateThreadAsync(ThreadRequest threadRequest);
         Task<string> ModifyThreadAsync(ThreadRequest threadRequest, string threadId);
         Task<string> DeleteThreadAsync(string threadId);
 
