@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -208,7 +207,7 @@ namespace OpenAI.FuncApp.Services
         }
 
         // Runs
-        public async Task<List<ThreadEvent>> CreateRun(RunRequest runRequest, string threadId)
+        public async Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId)
         {
             // TODO: maybe do not need to do another mapping here if json works okay with runRequest
             var requestBody = new
@@ -284,11 +283,11 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private async Task<List<ThreadEvent>> V2PostStreamAsync(string url, object requestBody)
+        private async Task<List<ThreadEventResponse>> V2PostStreamAsync(string url, object requestBody)
         {
             try
             {
-                var responseDto = new List<ThreadEvent>();
+                var responseDto = new List<ThreadEventResponse>();
                 var jsonString = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
@@ -356,9 +355,9 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private static async Task<List<ThreadEvent>> ProcessStreamingResponse(HttpResponseMessage response)
+        private static async Task<List<ThreadEventResponse>> ProcessStreamingResponse(HttpResponseMessage response)
         {
-            var responseDto = new List<ThreadEvent>();
+            var responseDto = new List<ThreadEventResponse>();
 
             using (var responseStream = await response.Content.ReadAsStreamAsync())
             using (var reader = new StreamReader(responseStream))
@@ -377,18 +376,18 @@ namespace OpenAI.FuncApp.Services
 
                             //v2
                             var jsonData = dataLine.Substring(6); // Remove "data: " prefix
-                            ThreadEvent threadEvent = new ThreadEvent { Event = eventType };
+                            var threadEventResponse = new ThreadEventResponse { Event = eventType };
 
                             if (eventType == "thread.message.delta")
                             {
-                                threadEvent.DataDelta = JsonConvert.DeserializeObject<DataDelta>(jsonData);
+                                threadEventResponse.DataDelta = JsonConvert.DeserializeObject<DataDelta>(jsonData);
                             }
                             else if (eventType == "thread.message.completed")
                             {
-                                threadEvent.DataCompleted = JsonConvert.DeserializeObject<DataCompleted>(jsonData);
+                                threadEventResponse.DataCompleted = JsonConvert.DeserializeObject<DataCompleted>(jsonData);
                             }
 
-                            responseDto.Add(HandleEvent(threadEvent));
+                            responseDto.Add(HandleEvent(threadEventResponse));
                         }
                     }
                 }
@@ -397,14 +396,13 @@ namespace OpenAI.FuncApp.Services
             return responseDto;
         }
 
-        private static ThreadEvent HandleEvent(ThreadEvent threadEvent)
+        private static ThreadEventResponse HandleEvent(ThreadEventResponse threadEvent)
         {
             if (threadEvent == null)
             {
                 Console.WriteLine("ThreadEvent is null.");
                 return null;
             }
-            var response = new ThreadEvent();
 
             Console.WriteLine($"Event: {threadEvent.Event}");
 
@@ -446,7 +444,7 @@ namespace OpenAI.FuncApp.Services
                 return;
             }
 
-            // LogCompletedDetails(dataCompleted);
+            // LogCompletedDetails(dataCompleted); Not needed
             LogCompletedContent(dataCompleted.Content);
         }
 
@@ -462,7 +460,7 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        private static void LogCompletedContent(List<CompletedContent> contentList)
+        private static void LogCompletedContent(List<Content> contentList)
         {
             Console.WriteLine("Content:");
 

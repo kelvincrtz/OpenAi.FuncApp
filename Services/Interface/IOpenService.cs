@@ -25,7 +25,7 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> DeleteMessagesAsync(string threadId, string messageId);
 
         // Runs
-        Task<List<ThreadEvent>> CreateRun(RunRequest runRequest, string threadId);
+        Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId);
 
         // Classifications
         Task<string> ClassifyTextAsync(string text);

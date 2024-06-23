@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 
 namespace OpenAi.FuncApp.Data.Response
 {
+    // TODO REMOVE
     public class ThreadResponse
     {
         [JsonProperty("id")]

@@ -13,7 +13,7 @@ namespace OpenAi.FuncApp.Data.Response
         [JsonProperty("created_at")]
         public int Created_At { get; set; }
 
-        [JsonProperty("assistant_id")]
+        [JsonProperty("assistant_id", NullValueHandling = NullValueHandling.Ignore)]
         public string Assistant_Id { get; set; }
 
         [JsonProperty("thread_Id")]

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -38,7 +37,7 @@ namespace OpenAi.FuncApp.Functions
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error assisting.");
+                log.LogError(ex, "Error starting a new thread.");
                 return new StatusCodeResult(500);
             }
         }
@@ -59,7 +58,7 @@ namespace OpenAi.FuncApp.Functions
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error assisting.");
+                log.LogError(ex, "Error creating the thread.");
                 return new StatusCodeResult(500);
             }
         }
@@ -81,7 +80,7 @@ namespace OpenAi.FuncApp.Functions
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error assisting.");
+                log.LogError(ex, "Error running the thread.");
                 return new StatusCodeResult(500);
             }
         }
