@@ -19,20 +19,22 @@ namespace OpenAi.FuncApp.Services.Interface
 
         // Messages
         Task<string> AddMessageAsync(MessageRequest messageRequest, string threadId);
-        Task<string> ListMessagesAsync(string threadId);
-        Task<string> RetrieveMessagesAsync(string threadId, string messageId);
+        Task<MessageListResponse> ListMessagesAsync(string threadId);
+        Task<Message> RetrieveMessagesAsync(string threadId, string messageId);
         Task<string> ModifyMessagesAsync(MessageRequest messageRequest, string threadId, string messageId);
         Task<string> DeleteMessagesAsync(string threadId, string messageId);
 
-        // Runs
+        // Runs (Streaming Response type)
         Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId);
 
         // Classifications
         Task<string> ClassifyTextAsync(string text);
 
-        // Vectors
-        Task<string> SearchVectorStoreAsync(string query);
-        Task<string> InsertVectorAsync(string vectorData);
+        // Vectors and Files
+        Task<VectorStore> CreateVectorStore();
+        Task<VectorStoreListResponse> ListCreateVectorStores();
+        Task<VectorStore> CreateVectorStoreFile(string vectorStoreId);
+        Task<VectorStoreListResponse> ListVectorStoreFiles(string vectorStoreId);
 
         // Completions
         Task<string> GenerateCompletionAsync(CompletionRequest request);

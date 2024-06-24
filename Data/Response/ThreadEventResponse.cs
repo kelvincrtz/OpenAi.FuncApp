@@ -84,6 +84,12 @@ namespace OpenAi.FuncApp.Data.Response
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
+    public class ThreadResponse
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; }
+    }
+
     public class ThreadEventResponse
     {
         public string Event { get; set; }

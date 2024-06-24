@@ -75,25 +75,29 @@ namespace OpenAI.FuncApp.Services
             return await V2DeleteAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
-        // Vectors
-        public async Task<string> SearchVectorStoreAsync(string query)
+        // Vectors and Files
+        public async Task<VectorStore> CreateVectorStore()
         {
-            var requestBody = new
-            {
-                query
-            };
-
-            return await V1PostAsync($"{_config.BaseUrl}/vector-store/search", requestBody);
+            var jsonResponse = await V2PostAsync($"{_config.BaseUrl}/vector_stores", null);
+            return JsonConvert.DeserializeObject<VectorStore>(jsonResponse);
         }
 
-        public async Task<string> InsertVectorAsync(string vectorData)
+        public async Task<VectorStoreListResponse> ListCreateVectorStores()
         {
-            var requestBody = new
-            {
-                vectorData
-            };
+            var jsonResponse = await V2GetAsync($"{_config.BaseUrl}/vector_stores");
+            return JsonConvert.DeserializeObject<VectorStoreListResponse>(jsonResponse);
+        }
 
-            return await V1PostAsync($"{_config.BaseUrl}/vector-store/insert", requestBody);
+        public async Task<VectorStore> CreateVectorStoreFile(string vectorStoreId)
+        {
+            var jsonResponse = await V2PostAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files", null);
+            return JsonConvert.DeserializeObject<VectorStore>(jsonResponse);
+        }
+
+        public async Task<VectorStoreListResponse> ListVectorStoreFiles(string vectorStoreId)
+        {
+            var jsonResponse = await V2GetAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files");
+            return JsonConvert.DeserializeObject<VectorStoreListResponse>(jsonResponse);
         }
 
         // Classifications
@@ -175,14 +179,16 @@ namespace OpenAI.FuncApp.Services
             return await V2PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
         }
 
-        public async Task<string> ListMessagesAsync(string threadId)
+        public async Task<MessageListResponse> ListMessagesAsync(string threadId)
         {
-            return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages");
+            var jsonResponse = await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages");
+            return JsonConvert.DeserializeObject<MessageListResponse>(jsonResponse);
         }
 
-        public async Task<string> RetrieveMessagesAsync(string threadId, string messageId)
+        public async Task<Message> RetrieveMessagesAsync(string threadId, string messageId)
         {
-            return await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
+            var jsonResponse = await V2GetAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
+            return JsonConvert.DeserializeObject<Message>(jsonResponse);
         }
 
         public async Task<string> ModifyMessagesAsync(MessageRequest messageRequest, string threadId, string messageId)
@@ -228,25 +234,7 @@ namespace OpenAI.FuncApp.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error posting to {url}: {ex.Message}");
-            }
-        }
-
-        private async Task<string> V1GetAsync(string url)
-        {
-            try
-            {
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                var response = await _httpClient.GetAsync(url);
-                var responseString = await response.Content.ReadAsStringAsync();
-
-                dynamic responseData = JsonConvert.DeserializeObject(responseString);
-                return JsonConvert.SerializeObject(responseData);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error posting to {url}: {ex.Message}");
+                throw new InvalidOperationException($"Unexpected error while posting data from {url}: {ex.Message}", ex);
             }
         }
 
@@ -268,7 +256,7 @@ namespace OpenAI.FuncApp.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error posting to {url}: {ex.Message}");
+                throw new InvalidOperationException($"Unexpected error while posting data from {url}: {ex.Message}", ex);
             }
         }
 
@@ -276,7 +264,6 @@ namespace OpenAI.FuncApp.Services
         {
             try
             {
-                var responseDto = new List<ThreadEventResponse>();
                 var jsonString = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
@@ -284,27 +271,17 @@ namespace OpenAI.FuncApp.Services
                 _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
                 _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, $"assistants=v2");
                 var response = await _httpClient.PostAsync(url, content);
-                try
-                {
-                    responseDto = await ProcessStreamingResponse(response);
-                }
-                catch (HttpRequestException httpEx)
-                {
-                    Console.WriteLine($"Request Error: {httpEx.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Unexpected Error: {ex.Message}");
-                }
-
-                return responseDto;
+                return await ProcessStreamingResponse(response);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                throw new HttpRequestException($"HTTP request error while getting data from {url}: {httpEx.Message}", httpEx);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error posting to {url}: {ex.Message}");
+                throw new InvalidOperationException($"Unexpected error while posting data from {url}: {ex.Message}", ex);
             }
         }
-
 
         private async Task<string> V2GetAsync(string url)
         {
@@ -319,9 +296,13 @@ namespace OpenAI.FuncApp.Services
                 dynamic responseData = JsonConvert.DeserializeObject(responseString);
                 return JsonConvert.SerializeObject(responseData);
             }
+            catch (HttpRequestException httpEx)
+            {
+                throw new HttpRequestException($"HTTP request error while getting data from {url}: {httpEx.Message}", httpEx);
+            }
             catch (Exception ex)
             {
-                throw new Exception($"Error getting to {url}: {ex.Message}");
+                throw new InvalidOperationException($"Unexpected error while getting data from {url}: {ex.Message}", ex);
             }
         }
 
@@ -340,7 +321,7 @@ namespace OpenAI.FuncApp.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error getting to {url}: {ex.Message}");
+                throw new InvalidOperationException($"Unexpected error while deleting data from {url}: {ex.Message}", ex);
             }
         }
 
@@ -467,22 +448,6 @@ namespace OpenAI.FuncApp.Services
                     Console.WriteLine("Completed Content is null.");
                 }
             }
-        }
-
-        // not used for now - for testing purposes only
-        private static void LogCompletedDetails(DataCompleted dataCompleted)
-        {
-            Console.WriteLine($"ID: {dataCompleted.Id}");
-            Console.WriteLine($"Object: {dataCompleted.Object}");
-            Console.WriteLine($"Created At: {dataCompleted.CreatedAt}");
-            Console.WriteLine($"Assistant ID: {dataCompleted.AssistantId}");
-            Console.WriteLine($"Thread ID: {dataCompleted.ThreadId}");
-            Console.WriteLine($"Run ID: {dataCompleted.RunId}");
-            Console.WriteLine($"Status: {dataCompleted.Status}");
-            Console.WriteLine($"Incomplete Details: {dataCompleted.IncompleteDetails}");
-            Console.WriteLine($"Incomplete At: {dataCompleted.IncompleteAt}");
-            Console.WriteLine($"Completed At: {dataCompleted.CompletedAt}");
-            Console.WriteLine($"Role: {dataCompleted.Role}");
         }
     }
 }

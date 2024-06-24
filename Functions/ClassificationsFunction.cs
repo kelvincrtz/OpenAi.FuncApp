@@ -12,6 +12,9 @@ namespace OpenAi.FuncApp.Services
 {
     public class ClassificationsFunction
     {
+        /// <summary>
+        /// New feature of OpenAI
+        /// </summary>
         private readonly IOpenAIService _openAIService;
 
         public ClassificationsFunction(IOpenAIService openAIService)

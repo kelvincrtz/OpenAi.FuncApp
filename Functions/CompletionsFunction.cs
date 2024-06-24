@@ -14,6 +14,10 @@ namespace OpenAi.FuncApp.Functions
 {
     public class CompletionsFunction
     {
+        /// <summary>
+        /// Completion APIs will soon be a legacy product of OpenAI
+        /// Another option is to use Threads
+        /// </summary>
         private readonly IOpenAIService _openAIService;
 
         public CompletionsFunction(IOpenAIService openAIService)

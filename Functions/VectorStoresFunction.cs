@@ -1,11 +1,10 @@
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
@@ -19,54 +18,69 @@ namespace OpenAi.FuncApp.Functions
             _openAIService = openAIService;
         }
 
-        [FunctionName("SearchVectorStore")]
-        public async Task<IActionResult> Search(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "vector-store/search")] HttpRequestMessage req,
+        /// <summary>
+        /// Create vector store
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("CreateVectorStore")]
+        public async Task<IActionResult> CreateVectorStore(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "vector_stores")]
+            HttpRequest req,
             ILogger log)
         {
-            string requestBody = await req.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            //string requestBody = await req.Content.ReadAsStringAsync();
+            //dynamic data = JsonConvert.DeserializeObject(requestBody);
 
-            string query = data?.query;
-            if (string.IsNullOrEmpty(query))
-            {
-                return new BadRequestObjectResult("Query is required.");
-            }
+            //string query = data?.query;
+            //if (string.IsNullOrEmpty(query))
+            //{
+            //    return new BadRequestObjectResult("Query is required.");
+            //}
 
             try
             {
-                string response = await _openAIService.SearchVectorStoreAsync(query);
+                dynamic response = await _openAIService.CreateVectorStore();
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error searching vector store.");
+                log.LogError(ex, "Error creating vector store.");
                 return new StatusCodeResult(500);
             }
         }
 
-        [FunctionName("InsertVector")]
-        public async Task<IActionResult> Insert(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "vector-store/insert")] HttpRequestMessage req,
+        /// <summary>
+        /// List vector stores
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("ListVectorStores")]
+        public async Task<IActionResult> ListVectorStores(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "vector_stores/{vectorStoreId}")]
+            HttpRequest req,
+            string vectorStoreId,
             ILogger log)
         {
-            string requestBody = await req.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
+            //string requestBody = await req.Content.ReadAsStringAsync();
+            //dynamic data = JsonConvert.DeserializeObject(requestBody);
 
-            string vectorData = data?.vectorData;
-            if (string.IsNullOrEmpty(vectorData))
-            {
-                return new BadRequestObjectResult("Vector data is required.");
-            }
+            //string query = data?.query;
+            //if (string.IsNullOrEmpty(query))
+            //{
+            //    return new BadRequestObjectResult("Query is required.");
+            //}
 
             try
             {
-                string response = await _openAIService.InsertVectorAsync(vectorData);
+                dynamic response = await _openAIService.ListVectorStoreFiles(vectorStoreId);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error inserting vector data.");
+                log.LogError(ex, "Error listing vector stores.");
                 return new StatusCodeResult(500);
             }
         }
