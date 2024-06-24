@@ -92,6 +92,38 @@ namespace OpenAi.FuncApp.Functions
         }
 
         /// <summary>
+        /// Create a new thread
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("StartNewThreadJsonFormatAsync")]
+        public async Task<IActionResult> StartNewThreadJsonFormatAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "threads/json/json")]
+            HttpRequest req,
+            ILogger log)
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<MessageRequest>(requestBody);
+
+            if (string.IsNullOrEmpty(request.Content) || string.IsNullOrEmpty(request.Assistant_Id))
+            {
+                return new BadRequestObjectResult("Content and AssistantId are required.");
+            }
+
+            try
+            {
+                var response = await _openAIService.StartNewThreadJsonFormatAsync(request);
+                return new OkObjectResult(response);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error starting a new thread.");
+                return new StatusCodeResult(500);
+            }
+        }
+
+        /// <summary>
         /// Endpoints is expose only for testing purposes
         /// </summary>
         /// <param name="req"></param>

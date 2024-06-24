@@ -10,6 +10,7 @@ namespace OpenAi.FuncApp.Services.Interface
         // Main
         Task<List<ThreadEventResponse>> StartNewThreadAsync(MessageRequest messageRequest);
         Task<List<ThreadEventResponse>> ContinueThreadAsync(MessageRequest messageRequest, string threadId);
+        Task<QuestionsResponse> StartNewThreadJsonFormatAsync(MessageRequest messageRequest);
 
         // Threads
         Task<ThreadResponse> CreateNewThreadAsync();
@@ -26,6 +27,7 @@ namespace OpenAi.FuncApp.Services.Interface
 
         // Runs (Streaming Response type)
         Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId);
+        Task<QuestionsResponse> CreateRunJsonFormat(RunRequest runRequest, string threadId);
 
         // Classifications
         Task<string> ClassifyTextAsync(string text);
