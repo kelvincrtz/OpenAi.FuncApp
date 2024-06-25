@@ -30,15 +30,6 @@ namespace OpenAi.FuncApp.Functions
             HttpRequest req,
             ILogger log)
         {
-            //string requestBody = await req.Content.ReadAsStringAsync();
-            //dynamic data = JsonConvert.DeserializeObject(requestBody);
-
-            //string query = data?.query;
-            //if (string.IsNullOrEmpty(query))
-            //{
-            //    return new BadRequestObjectResult("Query is required.");
-            //}
-
             try
             {
                 dynamic response = await _openAIService.CreateVectorStore();
@@ -64,14 +55,10 @@ namespace OpenAi.FuncApp.Functions
             string vectorStoreId,
             ILogger log)
         {
-            //string requestBody = await req.Content.ReadAsStringAsync();
-            //dynamic data = JsonConvert.DeserializeObject(requestBody);
-
-            //string query = data?.query;
-            //if (string.IsNullOrEmpty(query))
-            //{
-            //    return new BadRequestObjectResult("Query is required.");
-            //}
+            if (string.IsNullOrEmpty(vectorStoreId))
+            {
+                return new BadRequestObjectResult("Vectore store id is required.");
+            }
 
             try
             {
