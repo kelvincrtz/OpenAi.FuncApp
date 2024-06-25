@@ -12,5 +12,8 @@ namespace OpenAi.FuncApp.Data.Requests
 
         [JsonProperty("assistant_id", NullValueHandling = NullValueHandling.Ignore)]
         public string Assistant_Id { get; set; }
+
+        [JsonProperty("model", NullValueHandling = NullValueHandling.Ignore)]
+        public string Model { get; set; }
     }
 }

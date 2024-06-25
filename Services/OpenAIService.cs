@@ -36,7 +36,8 @@ namespace OpenAI.FuncApp.Services
             // 3. Run thread
             return await CreateRun(new RunRequest
             {
-                Assistant_Id = messageRequest.Assistant_Id
+                Assistant_Id = messageRequest.Assistant_Id,
+                Model = messageRequest.Model
             }, newThread.Id);
         }
 
@@ -49,7 +50,8 @@ namespace OpenAI.FuncApp.Services
             // 2. Run thread
             return await CreateRun(new RunRequest
             {
-                Assistant_Id = messageRequest.Assistant_Id
+                Assistant_Id = messageRequest.Assistant_Id,
+                Model = messageRequest.Model
             }, threadId);
         }
 
@@ -64,7 +66,8 @@ namespace OpenAI.FuncApp.Services
             // 3. Run thread
             return await CreateRunJsonFormat(new RunRequest
             {
-                Assistant_Id = messageRequest.Assistant_Id
+                Assistant_Id = messageRequest.Assistant_Id,
+                Model = messageRequest.Model
             }, newThread.Id);
         }
 
@@ -188,7 +191,7 @@ namespace OpenAI.FuncApp.Services
             var requestBody = new
             {
                 role = messageRequest.Role,
-                content = messageRequest.Content // TODO: for the time being we only use a Text type for Content. We might need more options later
+                content = messageRequest.Content
             };
 
             return await PostAsync($"{_config.BaseUrl}/threads/{threadId}/messages", requestBody);
@@ -222,7 +225,7 @@ namespace OpenAI.FuncApp.Services
             var requestBody = new
             {
                 assistant_id = runRequest.Assistant_Id,
-                // additional_instructions = runRequest.Additional_Instructions,
+                model = runRequest.Model,
                 tool_choice = runRequest.Tool_Choice,
                 stream = true
             };
@@ -235,6 +238,7 @@ namespace OpenAI.FuncApp.Services
             var requestBody = new
             {
                 assistant_id = runRequest.Assistant_Id,
+                model = runRequest.Model,
                 tool_choice = runRequest.Tool_Choice,
                 stream = true
             };
@@ -245,7 +249,6 @@ namespace OpenAI.FuncApp.Services
         /// <summary>
         /// Helpers
         /// </summary>
-
         private async Task<string> PostAsync(string url, object requestBody)
         {
             try
@@ -343,7 +346,7 @@ namespace OpenAI.FuncApp.Services
             {
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, $"assistants=v2");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
                 var response = await _httpClient.DeleteAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 

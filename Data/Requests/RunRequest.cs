@@ -12,5 +12,8 @@ namespace OpenAi.FuncApp.Data.Requests
 
         [JsonProperty("tool_choice", NullValueHandling = NullValueHandling.Ignore)]
         public string Tool_Choice { get; set; }
+
+        [JsonProperty("model", NullValueHandling = NullValueHandling.Ignore)]
+        public string Model { get; set; }  
     }
 }

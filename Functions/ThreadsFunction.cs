@@ -28,6 +28,7 @@ namespace OpenAi.FuncApp.Functions
 
         /// <summary>
         /// Create a new thread
+        /// This will call the Message API followed by the Run API
         /// </summary>
         /// <param name="req"></param>
         /// <param name="log"></param>
@@ -60,6 +61,7 @@ namespace OpenAi.FuncApp.Functions
 
         /// <summary>
         /// Continue an existing thread
+        /// This will call the Message API followed by the Run API
         /// </summary>
         /// <param name="req"></param>
         /// <param name="log"></param>
@@ -93,6 +95,7 @@ namespace OpenAi.FuncApp.Functions
 
         /// <summary>
         /// Create a new thread
+        /// This will call the Message API followed by the Run API
         /// </summary>
         /// <param name="req"></param>
         /// <param name="log"></param>
