@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
@@ -247,6 +248,44 @@ namespace OpenAI.FuncApp.Services
         }
 
         /// <summary>
+        /// Audio
+        /// Create speech and create transcriptions
+        /// </summary>
+        public async Task<object> CreateSpeechAsync(SpeechRequest request)
+        {
+            var requestBody = new
+            {
+                model = request.Model,
+                input = request.Input,
+                voice = request.Voice,
+                response_format = request.ResponseFormat
+            };
+
+            return await PostAsync($"{_config.BaseUrl}/audio/speech", requestBody);
+        }
+
+        public async Task<object> CreateTranscriptionAsync(
+            byte[] audioData,
+            string fileName,
+            string model = "whisper-1",
+            string language = "en",
+            string prompt = "",
+            string responseFormat = "json")
+        {
+            using var content = new MultipartFormDataContent();
+            var audioContent = new ByteArrayContent(audioData);
+            audioContent.Headers.ContentType = new MediaTypeHeaderValue("audio/m4a"); // Adjust this to your audio file type
+            content.Add(audioContent, "file", fileName);
+            
+            content.Add(new StringContent(model), "model");
+            content.Add(new StringContent(language), "language");
+            content.Add(new StringContent(prompt), "prompt");
+            content.Add(new StringContent(responseFormat), "response_format");
+                        
+            return await PostFileAsync($"{_config.BaseUrl}/audio/transcriptions", content);
+        }
+
+        /// <summary>
         /// Helpers
         /// </summary>
         private async Task<string> PostAsync(string url, object requestBody)
@@ -310,6 +349,26 @@ namespace OpenAI.FuncApp.Services
             catch (HttpRequestException httpEx)
             {
                 throw new HttpRequestException($"HTTP request error while getting data from {url}: {httpEx.Message}", httpEx);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error while posting data from {url}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<string> PostFileAsync(string url, MultipartFormDataContent request)
+        {
+            try
+            {
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
+                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
+                var response = await _httpClient.PostAsync(url, request);
+                response.EnsureSuccessStatusCode();
+                var responseString = await response.Content.ReadAsStringAsync();
+
+                dynamic responseData = JsonConvert.DeserializeObject(responseString);
+                return JsonConvert.SerializeObject(responseData);
             }
             catch (Exception ex)
             {
@@ -509,7 +568,7 @@ namespace OpenAI.FuncApp.Services
 
             if (contentList == null)
             {
-                Console.WriteLine("Completed Content is null.");
+                Console.WriteLine("Content is null.");
                 return;
             }
 
