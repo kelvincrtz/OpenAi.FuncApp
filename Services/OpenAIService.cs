@@ -251,7 +251,7 @@ namespace OpenAI.FuncApp.Services
         /// Audio
         /// Create speech and create transcriptions
         /// </summary>
-        public async Task<object> CreateSpeechAsync(SpeechRequest request)
+        public async Task<byte[]> CreateSpeechAsync(SpeechRequest request)
         {
             var requestBody = new
             {
@@ -261,10 +261,10 @@ namespace OpenAI.FuncApp.Services
                 response_format = request.ResponseFormat
             };
 
-            return await PostAsync($"{_config.BaseUrl}/audio/speech", requestBody);
+            return await PostByteAsync($"{_config.BaseUrl}/audio/speech", requestBody);
         }
 
-        public async Task<object> CreateTranscriptionAsync(
+        public async Task<TranscriptionResponse> CreateTranscriptionAsync(
             byte[] audioData,
             string fileName,
             string model = "whisper-1",
@@ -276,13 +276,14 @@ namespace OpenAI.FuncApp.Services
             var audioContent = new ByteArrayContent(audioData);
             audioContent.Headers.ContentType = new MediaTypeHeaderValue("audio/m4a"); // Adjust this to your audio file type
             content.Add(audioContent, "file", fileName);
-            
+
             content.Add(new StringContent(model), "model");
             content.Add(new StringContent(language), "language");
             content.Add(new StringContent(prompt), "prompt");
             content.Add(new StringContent(responseFormat), "response_format");
-                        
-            return await PostFileAsync($"{_config.BaseUrl}/audio/transcriptions", content);
+
+            var jsonResponse = await PostFileAsync($"{_config.BaseUrl}/audio/transcriptions", content);
+            return JsonConvert.DeserializeObject<TranscriptionResponse>(jsonResponse);
         }
 
         /// <summary>
@@ -294,11 +295,7 @@ namespace OpenAI.FuncApp.Services
             {
                 var jsonString = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonString, Encoding.UTF8, Defaults.JsonMediaType);
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
-                var response = await _httpClient.PostAsync(url, content);
+                HttpResponseMessage response = await PostHelperAsync(url, content);
                 var responseString = await response.Content.ReadAsStringAsync();
 
                 dynamic responseData = JsonConvert.DeserializeObject(responseString);
@@ -310,17 +307,14 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
+        // Post with streaming
         private async Task<List<ThreadEventResponse>> PostStreamAsync(string url, object requestBody)
         {
             try
             {
                 var jsonString = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
-                var response = await _httpClient.PostAsync(url, content);
+                var content = new StringContent(jsonString, Encoding.UTF8, Defaults.JsonMediaType);
+                HttpResponseMessage response = await PostHelperAsync(url, content);
                 return await ProcessStreamingResponse(response);
             }
             catch (HttpRequestException httpEx)
@@ -333,17 +327,15 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
+        // Post with streaming
+        // Quetions Response
         private async Task<QuestionsResponse> PostStreamJsonFormatAsync(string url, object requestBody)
         {
             try
             {
                 var jsonString = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(jsonString, Encoding.UTF8, Defaults.JsonMediaType);
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
-                var response = await _httpClient.PostAsync(url, content);
+                HttpResponseMessage response = await PostHelperAsync(url, content);
                 return await ProcessStreamingJsonFormatResponse(response);
             }
             catch (HttpRequestException httpEx)
@@ -360,9 +352,7 @@ namespace OpenAI.FuncApp.Services
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
+                DefaultHeaderHelper();
                 var response = await _httpClient.PostAsync(url, request);
                 response.EnsureSuccessStatusCode();
                 var responseString = await response.Content.ReadAsStringAsync();
@@ -376,13 +366,35 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
+        // Post with Byte[] return
+        private async Task<byte[]> PostByteAsync(string url, object requestBody)
+        {
+            try
+            {
+                var jsonString = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonString, Encoding.UTF8, Defaults.JsonMediaType);
+                HttpResponseMessage response = await PostHelperAsync(url, content);
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Unexpected error while posting data from {url}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<HttpResponseMessage> PostHelperAsync(string url, StringContent content)
+        {
+            DefaultHeaderHelper();
+            var response = await _httpClient.PostAsync(url, content);
+            return response;
+        }
+
         private async Task<string> GetAsync(string url)
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
+                DefaultHeaderHelper();
                 var response = await _httpClient.GetAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 
@@ -403,9 +415,7 @@ namespace OpenAI.FuncApp.Services
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
-                _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
+                DefaultHeaderHelper();
                 var response = await _httpClient.DeleteAsync(url);
                 var responseString = await response.Content.ReadAsStringAsync();
 
@@ -416,6 +426,13 @@ namespace OpenAI.FuncApp.Services
             {
                 throw new InvalidOperationException($"Unexpected error while deleting data from {url}: {ex.Message}", ex);
             }
+        }
+
+        private void DefaultHeaderHelper()
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add(Defaults.Authorization, $"Bearer {_config.ApiKey}");
+            _httpClient.DefaultRequestHeaders.Add(Defaults.OpenAI_Beta, Defaults.AssistantsV2);
         }
 
         /// <summary>

@@ -49,13 +49,7 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> DeleteAssistantAsync(string assistantId);
 
         // Audio - Create speech and create transcriptions
-        Task<object> CreateSpeechAsync(SpeechRequest request);
-        Task<object> CreateTranscriptionAsync(
-            byte[] audioData,
-            string fileName,
-            string model = "whisper-1",
-            string language = "en",
-            string prompt = "",
-            string responseFormat = "json");
+        Task<byte[]> CreateSpeechAsync(SpeechRequest request);
+        Task<TranscriptionResponse> CreateTranscriptionAsync(byte[] audioData, string fileName, string model = "whisper-1", string language = "en", string prompt = "", string responseFormat = "json");
     }
 }

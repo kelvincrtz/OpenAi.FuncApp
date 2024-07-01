@@ -7,65 +7,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using OpenAi.FuncApp.Data.Requests;
 using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
-    public class AudioFunctions
+    public class OpenAIFunctions
     {
         private readonly IOpenAIService _openAIService;
 
-        public AudioFunctions(IOpenAIService openAIService)
+        public OpenAIFunctions(IOpenAIService openAIService)
         {
             _openAIService = openAIService;
         }
 
         /// <summary>
-        /// Create vector store
+        /// TEST ONLY
+        /// Audio Chat
         /// </summary>
         /// <param name="req"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        [FunctionName("CreateSpeech")]
-        public async Task<IActionResult> CreateSpeech(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "audio")]
-            HttpRequest req,
-            ILogger log)
-        {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var request = JsonConvert.DeserializeObject<SpeechRequest>(requestBody);
-
-            if (string.IsNullOrEmpty(request.Input))
-            {
-                return new BadRequestObjectResult("Input is required for TTS.");
-            }
-
-            try
-            {
-                var audioData = await _openAIService.CreateSpeechAsync(request);
-                return new FileContentResult(audioData, $"audio/{request.ResponseFormat}")
-                {
-                    FileDownloadName = $"tts_output.{request.ResponseFormat}"
-                };
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Error starting a new thread.");
-                return new StatusCodeResult(500);
-            }
-        }
-
-        /// <summary>
-        /// List vector stores
-        /// </summary>
-        /// <param name="req"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        [FunctionName("CreateTranscription")]
-        public async Task<IActionResult> CreateTranscription(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "audio/transcription")]
+        [FunctionName("AudioChat")]
+        public async Task<IActionResult> AudioChat(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "openai/audio/chat")]
             HttpRequest req,
             ILogger log)
         {
@@ -93,7 +58,15 @@ namespace OpenAi.FuncApp.Functions
 
             try
             {
-                var response = await _openAIService.CreateTranscriptionAsync(audioData, file.FileName, model, language, prompt, responseFormat);
+                var responseAudio = await _openAIService.CreateTranscriptionAsync(audioData, file.FileName, model, language, prompt, responseFormat);
+
+                var messageRequest = new MessageRequest
+                {
+                    Role = "User",
+                    Content = responseAudio.Text,
+                    Assistant_Id = ""
+                };
+                var response = await _openAIService.StartNewThreadJsonFormatAsync(messageRequest);
                 return new OkObjectResult(response);
             }
             catch (Exception ex)
