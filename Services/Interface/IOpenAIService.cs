@@ -32,11 +32,15 @@ namespace OpenAi.FuncApp.Services.Interface
         // Classifications
         Task<string> ClassifyTextAsync(string text);
 
-        // Vectors and Files
+        // Vector store
         Task<VectorStore> CreateVectorStore();
         Task<VectorStoreListResponse> ListCreateVectorStores();
-        Task<VectorStore> CreateVectorStoreFile(string vectorStoreId);
+
+        // Vectore store files
+        Task<VectorStoreFile> CreateVectorStoreFile(string vectorStoreId, byte[] fileData, string fileName);
         Task<VectorStoreListResponse> ListVectorStoreFiles(string vectorStoreId);
+        Task<VectorStoreFile> RetrieveVectorStoreFile(string vectorStoreId, string fileId);
+        Task<VectorStoreFile> DeleteVectorStoreFile(string vectorStoreId, string fileId);
 
         // Completions
         Task<string> GenerateCompletionAsync(CompletionRequest request);

@@ -97,7 +97,7 @@ namespace OpenAI.FuncApp.Services
         }
 
         /// <summary>
-        /// Vectors and Files
+        /// Vectors store
         /// </summary>
         public async Task<VectorStore> CreateVectorStore()
         {
@@ -111,16 +111,36 @@ namespace OpenAI.FuncApp.Services
             return JsonConvert.DeserializeObject<VectorStoreListResponse>(jsonResponse);
         }
 
-        public async Task<VectorStore> CreateVectorStoreFile(string vectorStoreId)
+        /// <summary>
+        /// Vectors store files
+        /// </summary>
+        public async Task<VectorStoreFile> CreateVectorStoreFile(string vectorStoreId, byte[] fileData, string fileName)
         {
-            var jsonResponse = await PostAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files", null);
-            return JsonConvert.DeserializeObject<VectorStore>(jsonResponse);
+            using var content = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(fileData);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+            content.Add(fileContent, "file", fileName);
+
+            var jsonResponse = await PostFileAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files", content);
+            return JsonConvert.DeserializeObject<VectorStoreFile>(jsonResponse);
         }
 
         public async Task<VectorStoreListResponse> ListVectorStoreFiles(string vectorStoreId)
         {
             var jsonResponse = await GetAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files");
             return JsonConvert.DeserializeObject<VectorStoreListResponse>(jsonResponse);
+        }
+
+        public async Task<VectorStoreFile> RetrieveVectorStoreFile(string vectorStoreId, string fileId)
+        {
+            var jsonResponse = await GetAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files/{fileId}");
+            return JsonConvert.DeserializeObject<VectorStoreFile>(jsonResponse);
+        }
+
+        public async Task<VectorStoreFile> DeleteVectorStoreFile(string vectorStoreId, string fileId)
+        {
+            var jsonResponse = await DeleteAsync($"{_config.BaseUrl}/vector_stores/{vectorStoreId}/files/{fileId}");
+            return JsonConvert.DeserializeObject<VectorStoreFile>(jsonResponse);
         }
 
         /// <summary>

@@ -34,6 +34,9 @@ namespace OpenAi.FuncApp.Data.Response
 
         [JsonProperty("vector_store_id")]
         public string VectorStoreId { get; set; }
+
+        [JsonProperty("status", NullValueHandling = NullValueHandling.Ignore)]
+        public string Status { get; set; }
     }
 
     public class VectorStore
