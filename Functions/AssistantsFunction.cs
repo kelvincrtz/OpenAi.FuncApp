@@ -21,6 +21,12 @@ namespace OpenAi.FuncApp.Functions
             _openAIService = openAIService;
         }
 
+        /// <summary>
+        /// Create assistant
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
         [FunctionName("CreateAssistant")]
         public async Task<IActionResult> CreateAssistant(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "assistants")]
@@ -37,8 +43,7 @@ namespace OpenAi.FuncApp.Functions
 
             try
             {
-                string response = await _openAIService.CreateAssistantAsync(request);
-                return new OkObjectResult(response);
+                return new OkObjectResult(await _openAIService.CreateAssistantAsync(request));
             }
             catch (Exception ex)
             {
@@ -47,6 +52,12 @@ namespace OpenAi.FuncApp.Functions
             }
         }
 
+        /// <summary>
+        /// List assistants
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
         [FunctionName("ListAssistants")]
         public async Task<IActionResult> ListAssistants(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "assistants")]
@@ -55,8 +66,7 @@ namespace OpenAi.FuncApp.Functions
         {
             try
             {
-                string response = await _openAIService.ListAssistantsAsync();
-                return new OkObjectResult(response);
+                return new OkObjectResult(await _openAIService.ListAssistantsAsync());
             }
             catch (Exception ex)
             {
@@ -65,6 +75,12 @@ namespace OpenAi.FuncApp.Functions
             }
         }
 
+        /// <summary>
+        /// Retrieve assistant by id
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
         [FunctionName("RetrieveAssistant")]
         public async Task<IActionResult> RetrieveAssistant(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "assistants/{assistantId}")]
@@ -74,8 +90,7 @@ namespace OpenAi.FuncApp.Functions
         {
             try
             {
-                string response = await _openAIService.RetrieveAssistantAsync(assistantId);
-                return new OkObjectResult(response);
+                return new OkObjectResult(await _openAIService.RetrieveAssistantAsync(assistantId));
             }
             catch (Exception ex)
             {
@@ -84,6 +99,12 @@ namespace OpenAi.FuncApp.Functions
             }
         }
 
+        /// <summary>
+        /// Delete assistant
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
         [FunctionName("DeleteAssistant")]
         public async Task<IActionResult> DeleteAssistant(
             [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "assistants/{assistantId}")]
@@ -93,12 +114,43 @@ namespace OpenAi.FuncApp.Functions
         {
             try
             {
-                string response = await _openAIService.DeleteAssistantAsync(assistantId);
-                return new OkObjectResult(response);
+                return new OkObjectResult(await _openAIService.DeleteAssistantAsync(assistantId));
             }
             catch (Exception ex)
             {
                 log.LogError(ex, "Error deleting the assistant.");
+                return new StatusCodeResult(500);
+            }
+        }
+
+        /// <summary>
+        /// Modify assistant
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        [FunctionName("ModifyAssistant")]
+        public async Task<IActionResult> ModifyAssistant(
+            [HttpTrigger(AuthorizationLevel.Function, "put", Route = "assistants/{assistantId}")]
+            HttpRequest req,
+            string assistantId,
+            ILogger log)
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var request = JsonConvert.DeserializeObject<AssistantRequest>(requestBody);
+
+            if (string.IsNullOrEmpty(request.Instructions))
+            {
+                return new BadRequestObjectResult("Instructions is required.");
+            }
+
+            try
+            {
+                return new OkObjectResult(await _openAIService.ModifyAssistantAsync(request, assistantId));
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error modifying the assistant.");
                 return new StatusCodeResult(500);
             }
         }

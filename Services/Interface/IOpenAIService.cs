@@ -42,11 +42,11 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> GenerateCompletionAsync(CompletionRequest request);
 
         // Assistants
-        Task<string> CreateAssistantAsync(AssistantRequest request);
-        Task<string> ListAssistantsAsync();
-        Task<string> RetrieveAssistantAsync(string assistantId);
-        Task<string> ModifyAssistantAsync(AssistantRequest request, string assistantId);
-        Task<string> DeleteAssistantAsync(string assistantId);
+        Task<Assistant> CreateAssistantAsync(AssistantRequest request);
+        Task<AssistantListResponse> ListAssistantsAsync();
+        Task<Assistant> RetrieveAssistantAsync(string assistantId);
+        Task<Assistant> ModifyAssistantAsync(AssistantRequest request, string assistantId);
+        Task<Assistant> DeleteAssistantAsync(string assistantId);
 
         // Audio - Create speech and create transcriptions
         Task<byte[]> CreateSpeechAsync(SpeechRequest request);

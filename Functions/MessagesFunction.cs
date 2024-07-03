@@ -7,7 +7,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using OpenAi.FuncApp.Services.Interface;
 
-namespace OpenAi.FuncApp.Services
+namespace OpenAi.FuncApp.Functions
 {
 
     public class MessagesFunction

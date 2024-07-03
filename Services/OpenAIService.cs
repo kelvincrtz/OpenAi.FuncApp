@@ -72,7 +72,9 @@ namespace OpenAI.FuncApp.Services
             }, newThread.Id);
         }
 
-        // Threads
+        /// <summary>
+        /// Threads
+        /// </summary>
         public async Task<string> GetThreadMessagesAsync(string threadId)
         {
             return await GetAsync($"{_config.BaseUrl}/threads/{threadId}");
@@ -94,7 +96,9 @@ namespace OpenAI.FuncApp.Services
             return await DeleteAsync($"{_config.BaseUrl}/threads/{threadId}");
         }
 
-        // Vectors and Files
+        /// <summary>
+        /// Vectors and Files
+        /// </summary>
         public async Task<VectorStore> CreateVectorStore()
         {
             var jsonResponse = await PostAsync($"{_config.BaseUrl}/vector_stores", null);
@@ -119,7 +123,9 @@ namespace OpenAI.FuncApp.Services
             return JsonConvert.DeserializeObject<VectorStoreListResponse>(jsonResponse);
         }
 
-        // Classifications
+        /// <summary>
+        /// Classifications
+        /// </summary>
         public async Task<string> ClassifyTextAsync(string text)
         {
             var requestBody = new
@@ -130,7 +136,9 @@ namespace OpenAI.FuncApp.Services
             return await PostAsync($"{_config.BaseUrl}/classifications", requestBody);
         }
 
-        // Completions
+        /// <summary>
+        /// Completions
+        /// </summary>
         public async Task<string> GenerateCompletionAsync(CompletionRequest request)
         {
             var requestBody = new
@@ -145,8 +153,10 @@ namespace OpenAI.FuncApp.Services
             return await PostAsync($"{_config.BaseUrl}/chat/completions", requestBody);
         }
 
-        // Assistant
-        public async Task<string> CreateAssistantAsync(AssistantRequest request)
+        /// <summary>
+        /// Assistants
+        /// </summary>
+        public async Task<Assistant> CreateAssistantAsync(AssistantRequest request)
         {
             var requestBody = new
             {
@@ -156,20 +166,23 @@ namespace OpenAI.FuncApp.Services
                 model = request.Model
             };
 
-            return await PostAsync($"{_config.BaseUrl}/assistants", requestBody);
+            var jsonResponse = await PostAsync($"{_config.BaseUrl}/assistants", requestBody);
+            return JsonConvert.DeserializeObject<Assistant>(jsonResponse);
         }
 
-        public async Task<string> ListAssistantsAsync()
+        public async Task<AssistantListResponse> ListAssistantsAsync()
         {
-            return await GetAsync($"{_config.BaseUrl}/assistants");
+            var jsonResponse = await GetAsync($"{_config.BaseUrl}/assistants");
+            return JsonConvert.DeserializeObject<AssistantListResponse>(jsonResponse);
         }
 
-        public async Task<string> RetrieveAssistantAsync(string assistantId)
+        public async Task<Assistant> RetrieveAssistantAsync(string assistantId)
         {
-            return await GetAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            var jsonResponse = await GetAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            return JsonConvert.DeserializeObject<Assistant>(jsonResponse);
         }
 
-        public async Task<string> ModifyAssistantAsync(AssistantRequest request, string assistantId)
+        public async Task<Assistant> ModifyAssistantAsync(AssistantRequest request, string assistantId)
         {
             var requestBody = new
             {
@@ -178,15 +191,19 @@ namespace OpenAI.FuncApp.Services
                 model = request.Model
             };
 
-            return await PostAsync($"{_config.BaseUrl}/assistants/{assistantId}", requestBody);
+            var jsonResponse = await PostAsync($"{_config.BaseUrl}/assistants/{assistantId}", requestBody);
+            return JsonConvert.DeserializeObject<Assistant>(jsonResponse);
         }
 
-        public async Task<string> DeleteAssistantAsync(string assistantId)
+        public async Task<Assistant> DeleteAssistantAsync(string assistantId)
         {
-            return await DeleteAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            var jsonResponse = await DeleteAsync($"{_config.BaseUrl}/assistants/{assistantId}");
+            return JsonConvert.DeserializeObject<Assistant>(jsonResponse);
         }
 
-        // Messages
+        /// <summary>
+        /// Messages
+        /// </summary>
         public async Task<string> AddMessageAsync(MessageRequest messageRequest, string threadId)
         {
             var requestBody = new
@@ -220,7 +237,9 @@ namespace OpenAI.FuncApp.Services
             return await DeleteAsync($"{_config.BaseUrl}/threads/{threadId}/messages/{messageId}");
         }
 
-        // Runs
+        /// <summary>
+        /// Runs
+        /// </summary>
         public async Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId)
         {
             var requestBody = new
