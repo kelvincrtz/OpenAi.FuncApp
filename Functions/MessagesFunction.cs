@@ -9,11 +9,14 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
-
+    [ApiExplorerSettings(GroupName = "Messages")]
     public class MessagesFunction
     {
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public MessagesFunction(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

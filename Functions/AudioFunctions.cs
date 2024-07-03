@@ -13,10 +13,14 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "Audio")]
     public class AudioFunctions
     {
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public AudioFunctions(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

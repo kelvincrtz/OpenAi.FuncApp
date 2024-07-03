@@ -9,10 +9,14 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "Vectors")]
     public class VectorStoresFunction
     {
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public VectorStoresFunction(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

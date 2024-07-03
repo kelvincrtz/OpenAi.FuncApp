@@ -1,5 +1,4 @@
-﻿
-using AutoMapper;
+﻿using AutoMapper;
 
 namespace OpenAi.FuncApp.DataAccess
 {

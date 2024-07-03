@@ -12,10 +12,14 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "OpenAI")]
     public class OpenAIFunctions
     {
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public OpenAIFunctions(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

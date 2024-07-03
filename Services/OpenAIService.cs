@@ -385,7 +385,7 @@ namespace OpenAI.FuncApp.Services
             }
         }
 
-        // Post with Byte[] return
+        // Post with byte[] return
         private async Task<byte[]> PostByteAsync(string url, object requestBody)
         {
             try

@@ -12,6 +12,7 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "Completions")]
     public class CompletionsFunction
     {
         /// <summary>
@@ -20,6 +21,9 @@ namespace OpenAi.FuncApp.Functions
         /// </summary>
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public CompletionsFunction(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

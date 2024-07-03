@@ -10,6 +10,7 @@ using OpenAi.FuncApp.Services.Interface;
 
 namespace OpenAi.FuncApp.Functions
 {
+    [ApiExplorerSettings(GroupName = "Classifications")]
     public class ClassificationsFunction
     {
         /// <summary>
@@ -17,6 +18,9 @@ namespace OpenAi.FuncApp.Functions
         /// </summary>
         private readonly IOpenAIService _openAIService;
 
+        /// <summary>
+        /// </summary>
+        /// <param name="openAIService"></param>
         public ClassificationsFunction(IOpenAIService openAIService)
         {
             _openAIService = openAIService;

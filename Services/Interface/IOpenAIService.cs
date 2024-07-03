@@ -25,7 +25,7 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<string> ModifyMessagesAsync(MessageRequest messageRequest, string threadId, string messageId);
         Task<string> DeleteMessagesAsync(string threadId, string messageId);
 
-        // Runs (Streaming Response type)
+        // Runs (streaming response type)
         Task<List<ThreadEventResponse>> CreateRun(RunRequest runRequest, string threadId);
         Task<QuestionsResponse> CreateRunJsonFormat(RunRequest runRequest, string threadId);
 
@@ -48,7 +48,7 @@ namespace OpenAi.FuncApp.Services.Interface
         Task<Assistant> ModifyAssistantAsync(AssistantRequest request, string assistantId);
         Task<Assistant> DeleteAssistantAsync(string assistantId);
 
-        // Audio - Create speech and create transcriptions
+        // Audio - speech and transcriptions
         Task<byte[]> CreateSpeechAsync(SpeechRequest request);
         Task<TranscriptionResponse> CreateTranscriptionAsync(byte[] audioData, string fileName, string model = "whisper-1", string language = "en", string prompt = "", string responseFormat = "json");
     }

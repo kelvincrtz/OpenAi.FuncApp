@@ -18,7 +18,6 @@ namespace OpenAi.FuncApp.Functions
         private readonly IOpenAIService _openAIService;
 
         /// <summary>
-        /// We use Open AI service
         /// </summary>
         /// <param name="openAIService"></param>
         public ThreadsFunction(IOpenAIService openAIService)
